@@ -146,7 +146,7 @@ Editing ai.js file contents
  87
 
 /* =========================================
-   MÉMOCAMPUS — AI
+   MÃ‰MOCAMPUS â€” AI
    Assistant intelligent
 ========================================= */
 
@@ -160,7 +160,7 @@ let isGenerating = false;
 
 export function initAI() {
     if (!generateButton || !promptInput || !resultArea) {
-        console.warn("MémoCampus IA : éléments HTML introuvables.");
+        console.warn("MÃ©moCampus IA : Ã©lÃ©ments HTML introuvables.");
         return;
     }
 
@@ -174,7 +174,7 @@ export function initAI() {
     });
 }
 
-/* GÉNÉRATION */
+/* GÃ‰NÃ‰RATION */
 
 async function generateResponse() {
     if (isGenerating) return;
@@ -182,15 +182,15 @@ async function generateResponse() {
     const prompt = promptInput.value.trim();
 
     if (!prompt) {
-        resultArea.textContent = "Écris une question pour commencer.";
+        resultArea.textContent = "Ã‰cris une question pour commencer.";
         promptInput.focus();
         return;
     }
 
     isGenerating = true;
     generateButton.disabled = true;
-    generateButton.textContent = "Réflexion en cours...";
-    resultArea.textContent = "MémoCampus IA prépare une réponse...";
+    generateButton.textContent = "RÃ©flexion en cours...";
+    resultArea.textContent = "MÃ©moCampus IA prÃ©pare une rÃ©ponse...";
 
     try {
         const response = await fetch("/api/generate", {
@@ -212,22 +212,22 @@ async function generateResponse() {
         }
 
         if (!data.answer) {
-            throw new Error("Le serveur n'a renvoyé aucun texte.");
+            throw new Error("Le serveur n'a renvoyÃ© aucun texte.");
         }
 
         resultArea.textContent = data.answer;
 
     } catch (error) {
-        console.error("Erreur MémoCampus IA :", error);
+        console.error("Erreur MÃ©moCampus IA :", error);
 
         resultArea.textContent =
-            "Diagnostic MémoCampus IA : " +
+            "Diagnostic MÃ©moCampus IA : " +
             (error.message || "Erreur inconnue.");
 
     } finally {
         isGenerating = false;
         generateButton.disabled = false;
-        generateButton.textContent = "Générer une réponse";
+        generateButton.textContent = "GÃ©nÃ©rer une rÃ©ponse";
     }
 }
 
