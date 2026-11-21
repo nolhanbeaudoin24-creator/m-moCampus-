@@ -6,7 +6,7 @@
 
 export async function onRequestPost({ request, env }) {
     try {
-        // Vérifier la connexion à l'IA
+        // Vérifier la connexion à Workers AI
         if (!env.AI) {
             return Response.json(
                 { error: "Le service IA n'est pas configuré." },
@@ -32,16 +32,17 @@ export async function onRequestPost({ request, env }) {
             );
         }
 
-        // Interroger le modèle d'intelligence artificielle
+        // Interroger le nouveau modèle Gemma 4
         const result = await env.AI.run(
-            "@cf/meta/llama-3.1-8b-instruct",
+            "@cf/google/gemma-4-26b-a4b-it",
             {
                 prompt:
                     "Tu es MémoCampus IA, un assistant pédagogique " +
                     "qui aide les élèves à comprendre leurs cours. " +
-                    "Réponds en français, clairement et avec pédagogie.\n\n" +
+                    "Réponds toujours en français, clairement, " +
+                    "avec des explications simples et pédagogiques.\n\n" +
                     "Question de l'élève : " + prompt,
-                max_tokens: 700
+                max_completion_tokens: 700
             }
         );
 
