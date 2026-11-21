@@ -1,65 +1,96 @@
 
 /* =========================================
-   MÉMOCAMPUS — SERVEUR IA
-   Cloudflare Pages Function
+   MÉMOCAMPUS — AI
+   Assistant intelligent
 ========================================= */
 
-export async function onRequestPost({ request, env }) {
+const promptInput = document.getElementById("ai-prompt");
+const generateButton = document.getElementById("ai-generate");
+const resultArea = document.getElementById("ai-result");
+
+let isGenerating = false;
+
+/* =========================================
+   INITIALISATION
+========================================= */
+
+export function initAI() {
+    if (!generateButton || !promptInput || !resultArea) {
+        console.warn("MémoCampus IA : éléments HTML introuvables.");
+        return;
+    }
+
+    generateButton.addEventListener("click", generateResponse);
+
+    promptInput.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            generateResponse();
+        }
+    });
+}
+
+/* =========================================
+   GÉNÉRATION DE LA RÉPONSE
+========================================= */
+
+async function generateResponse() {
+    if (isGenerating) return;
+
+    const prompt = promptInput.value.trim();
+
+    if (!prompt) {
+        resultArea.textContent = "Écris une question pour commencer.";
+        promptInput.focus();
+        return;
+    }
+
+    isGenerating = true;
+
+    generateButton.disabled = true;
+    generateButton.textContent = "Réflexion en cours...";
+
+    resultArea.textContent =
+        "MémoCampus IA prépare une réponse...";
+
     try {
-        if (!env.AI) {
-            return Response.json(
-                { error: "Le service IA n'est pas configuré." },
-                { status: 503 }
+        const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt })
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+            throw new Error(
+                "Le serveur n'a pas renvoyé une réponse JSON."
             );
         }
 
-        const body = await request.json();
-        const prompt = body.prompt?.trim();
+        const data = await response.json();
 
-        if (!prompt) {
-            return Response.json(
-                { error: "Aucune question reçue." },
-                { status: 400 }
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Le serveur a rencontré une erreur."
             );
         }
 
-        if (prompt.length > 4000) {
-            return Response.json(
-                { error: "La question est trop longue." },
-                { status: 400 }
-            );
-        }
-
-        const result = await env.AI.run(
-            "@cf/google/gemma-4-26b-a4b-it",
-            {
-                prompt:
-                    "Tu es MémoCampus IA, un assistant pédagogique " +
-                    "qui aide les élèves à comprendre leurs cours. " +
-                    "Réponds toujours en français, clairement, " +
-                    "avec des explications simples et pédagogiques.\n\n" +
-                    "Question de l'élève : " + prompt,
-                max_completion_tokens: 700
-            }
-        );
-
-        const answer = result.response?.trim();
-
-        if (!answer) {
-            throw new Error("Aucune réponse générée.");
-        }
-
-        return Response.json({ answer });
+        resultArea.textContent =
+            data.answer || "Aucune réponse reçue.";
 
     } catch (error) {
         console.error("Erreur MémoCampus IA :", error);
 
-        return Response.json(
-            {
-                error: "Le serveur IA a rencontré une erreur.",
-                details: error?.message || String(error)
-            },
-            { status: 500 }
-        );
+        resultArea.textContent =
+            "Impossible de contacter MémoCampus IA pour le moment. Vérifie que le serveur et sa configuration sont opérationnels.";
+
+    } finally {
+        isGenerating = false;
+
+        generateButton.disabled = false;
+        generateButton.textContent = "Générer une réponse";
     }
 }
