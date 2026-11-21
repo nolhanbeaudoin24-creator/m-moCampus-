@@ -15,8 +15,15 @@ let isGenerating = false;
 ========================================= */
 
 export function initAI() {
-    if (!generateButton || !promptInput || !resultArea) {
-        console.warn("MémoCampus IA : éléments HTML introuvables.");
+    if (!promptInput || !generateButton || !resultArea) {
+        console.error(
+            "MémoCampus IA : éléments HTML introuvables.",
+            {
+                promptInput,
+                generateButton,
+                resultArea
+            }
+        );
         return;
     }
 
@@ -28,6 +35,8 @@ export function initAI() {
             generateResponse();
         }
     });
+
+    console.log("MémoCampus IA : bouton initialisé.");
 }
 
 /* =========================================
@@ -62,11 +71,13 @@ async function generateResponse() {
             body: JSON.stringify({ prompt })
         });
 
-        const contentType = response.headers.get("content-type") || "";
+        const contentType =
+            response.headers.get("content-type") || "";
 
         if (!contentType.includes("application/json")) {
             throw new Error(
-                "Le serveur n'a pas renvoyé une réponse JSON."
+                "Réponse serveur invalide. Code HTTP : " +
+                response.status
             );
         }
 
@@ -74,18 +85,26 @@ async function generateResponse() {
 
         if (!response.ok) {
             throw new Error(
-                data.error || "Le serveur a rencontré une erreur."
+                data.details ||
+                data.error ||
+                "Erreur HTTP " + response.status
             );
         }
 
-        resultArea.textContent =
-            data.answer || "Aucune réponse reçue.";
+        if (!data.answer) {
+            throw new Error(
+                "Le serveur n'a renvoyé aucune réponse."
+            );
+        }
+
+        resultArea.textContent = data.answer;
 
     } catch (error) {
         console.error("Erreur MémoCampus IA :", error);
 
         resultArea.textContent =
-            "Impossible de contacter MémoCampus IA pour le moment. Vérifie que le serveur et sa configuration sont opérationnels.";
+            "Diagnostic IA : " +
+            (error.message || "Erreur inconnue.");
 
     } finally {
         isGenerating = false;
