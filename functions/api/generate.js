@@ -6,6 +6,7 @@
 
 export async function onRequestPost({ request, env }) {
     try {
+        // Vérifier la liaison Workers AI
         if (!env.AI) {
             return Response.json(
                 { error: "Le service IA n'est pas configuré." },
@@ -13,8 +14,12 @@ export async function onRequestPost({ request, env }) {
             );
         }
 
+        // Récupérer la question
         const body = await request.json();
-        const prompt = body.prompt?.trim();
+        const prompt =
+            typeof body.prompt === "string"
+                ? body.prompt.trim()
+                : "";
 
         if (!prompt) {
             return Response.json(
@@ -30,23 +35,60 @@ export async function onRequestPost({ request, env }) {
             );
         }
 
+        // Interroger Gemma 4
         const result = await env.AI.run(
             "@cf/google/gemma-4-26b-a4b-it",
             {
-                prompt:
-                    "Tu es MémoCampus IA, un assistant pédagogique " +
-                    "qui aide les élèves à comprendre leurs cours. " +
-                    "Réponds toujours en français, clairement, " +
-                    "avec des explications simples et pédagogiques.\n\n" +
-                    "Question de l'élève : " + prompt,
+                messages: [
+                    {
+                        role: "system",
+                        content:
+                            "Tu es MémoCampus IA, un assistant pédagogique. " +
+                            "Tu aides les élèves à comprendre leurs cours. " +
+                            "Réponds toujours en français, clairement, " +
+                            "avec des explications simples et pédagogiques."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
                 max_completion_tokens: 700
             }
         );
 
-        const answer = result.response?.trim();
+        // Récupérer la réponse du modèle
+        const content =
+            result?.choices?.[0]?.message?.content;
+
+        let answer = "";
+
+        if (typeof content === "string") {
+            answer = content.trim();
+        } else if (Array.isArray(content)) {
+            answer = content
+                .map(part =>
+                    typeof part === "string"
+                        ? part
+                        : part?.text || ""
+                )
+                .join("")
+                .trim();
+        } else if (typeof result?.response === "string") {
+            // Compatibilité avec un autre format de réponse
+            answer = result.response.trim();
+        }
 
         if (!answer) {
-            throw new Error("Aucune réponse générée.");
+            const fields =
+                result && typeof result === "object"
+                    ? Object.keys(result).join(", ")
+                    : typeof result;
+
+            throw new Error(
+                "Aucun texte exploitable reçu du modèle. " +
+                "Champs reçus : " + (fields || "aucun")
+            );
         }
 
         return Response.json({ answer });
