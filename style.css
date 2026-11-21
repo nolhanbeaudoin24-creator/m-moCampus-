@@ -701,3 +701,93 @@ textarea:focus {
     transition-duration: .01ms !important;
   }
 }
+
+/* =========================================
+   CORRECTION — FORMULAIRES MÉMOCAMPUS
+========================================= */
+
+.content-form {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 14px;
+}
+
+.content-form input,
+.content-form textarea {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100%;
+    min-width: 0;
+    min-height: 45px;
+    flex: none;
+    background: #FAFBFD;
+    color: var(--text);
+}
+
+.content-form textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.content-form button[type="submit"] {
+    display: block;
+    align-self: flex-start;
+    min-height: 43px;
+}
+
+/* Formulaire des cartes mentales */
+
+.mindmap-create-panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+}
+
+.mindmap-create-panel h2 {
+    color: var(--navy);
+    margin-top: 0;
+}
+
+.mindmap-create-panel p {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+/* Cartes mentales enregistrées */
+
+.mindmap-card,
+.note-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 20px;
+    overflow-wrap: anywhere;
+}
+
+.mindmap-card h3,
+.note-card h3 {
+    color: var(--navy);
+    margin-top: 0;
+}
+
+.mindmap-card p,
+.note-card p {
+    white-space: pre-wrap;
+    line-height: 1.7;
+}
+
+.delete-button {
+    background: white;
+    color: var(--red);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
