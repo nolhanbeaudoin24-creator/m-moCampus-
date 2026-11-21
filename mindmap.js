@@ -22,6 +22,72 @@ export function initMindmap() {
     if (!mindmapList) return;
 
     renderMindmaps();
+    createMindmapForm();
+}
+
+function createMindmapForm() {
+    if (document.getElementById("mindmap-form")) return;
+
+    const container = document.createElement("section");
+    container.className = "mindmap-create";
+
+    container.innerHTML = `
+        <h2>Créer une carte mentale</h2>
+
+        <form id="mindmap-form">
+            <label for="mindmap-title">
+                Titre de la carte
+            </label>
+
+            <input
+                type="text"
+                id="mindmap-title"
+                placeholder="Exemple : Les transports"
+                required
+            >
+
+            <label for="mindmap-content">
+                Contenu de la carte
+            </label>
+
+            <textarea
+                id="mindmap-content"
+                rows="6"
+                placeholder="Écris les idées principales et les informations à retenir..."
+                required
+            ></textarea>
+
+            <button type="submit">
+                Enregistrer la carte mentale
+            </button>
+        </form>
+    `;
+
+    mindmapList.parentNode.insertBefore(container, mindmapList);
+
+    const form = container.querySelector("#mindmap-form");
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+
+        const title = document
+            .getElementById("mindmap-title")
+            .value.trim();
+
+        const content = document
+            .getElementById("mindmap-content")
+            .value.trim();
+
+        const success = createMindmap({ title, content });
+
+        if (!success) {
+            alert("Impossible d'enregistrer cette carte mentale.");
+            return;
+        }
+
+        form.reset();
+        alert("Carte mentale enregistrée !");
+    });
 }
 
 export function createMindmap(data) {
