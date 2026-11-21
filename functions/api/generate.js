@@ -6,7 +6,6 @@
 
 export async function onRequestPost({ request, env }) {
     try {
-        // Vérifier la connexion à Workers AI
         if (!env.AI) {
             return Response.json(
                 { error: "Le service IA n'est pas configuré." },
@@ -14,7 +13,6 @@ export async function onRequestPost({ request, env }) {
             );
         }
 
-        // Récupérer la question
         const body = await request.json();
         const prompt = body.prompt?.trim();
 
@@ -32,7 +30,6 @@ export async function onRequestPost({ request, env }) {
             );
         }
 
-        // Interroger le nouveau modèle Gemma 4
         const result = await env.AI.run(
             "@cf/google/gemma-4-26b-a4b-it",
             {
@@ -58,7 +55,10 @@ export async function onRequestPost({ request, env }) {
         console.error("Erreur MémoCampus IA :", error);
 
         return Response.json(
-            { error: "Le serveur IA a rencontré une erreur." },
+            {
+                error: "Le serveur IA a rencontré une erreur.",
+                details: error?.message || String(error)
+            },
             { status: 500 }
         );
     }
