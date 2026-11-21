@@ -1,239 +1,98 @@
 
 /* =========================================
-   MÉMOCAMPUS — APP
-   Initialisation et navigation générale
+   MÉMOCAMPUS — AI
+   Assistant intelligent
 ========================================= */
 
-import { initCourses } from "./courses.js";
-import { initFiles } from "./files.js";
-import { initWebsites } from "./websites.js";
-import { initNotes } from "./notes.js";
-import { initQuiz } from "./quiz.js";
-import { initMindmap } from "./mindmap.js";
-import { initProgress } from "./progress.js";
-import { initAI } from "./ai.js";
+const promptInput = document.getElementById("ai-prompt");
+const generateButton = document.getElementById("ai-generate");
+const resultArea = document.getElementById("ai-result");
 
-import {
-    exportData,
-    importData
-} from "./storage.js";
+let isGenerating = false;
 
-/* =========================================
-   TITRES DES PAGES
-========================================= */
+/* INITIALISATION */
 
-const pageTitles = {
-    dashboard: "Accueil",
-    courses: "Mes cours",
-    files: "Mes fichiers",
-    websites: "Sites web",
-    notes: "Fiches de révision",
-    quiz: "Quiz",
-    mindmap: "Cartes mentales",
-    progress: "Progression",
-    ai: "Intelligence artificielle",
-    settings: "Paramètres"
-};
-
-/* =========================================
-   NAVIGATION
-========================================= */
-
-function showPage(pageName) {
-    const pages = document.querySelectorAll(".page");
-    const navigationLinks = document.querySelectorAll("[data-page]");
-
-    const targetPage = document.getElementById(`page-${pageName}`);
-
-    if (!targetPage) {
-        console.warn("Page introuvable :", pageName);
+export function initAI() {
+    if (!generateButton || !promptInput || !resultArea) {
+        console.warn("MémoCampus IA : éléments HTML introuvables.");
         return;
     }
 
-    pages.forEach(page => {
-        page.classList.toggle(
-            "active",
-            page.id === `page-${pageName}`
-        );
+    generateButton.addEventListener("click", generateResponse);
+
+    promptInput.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            generateResponse();
+        }
     });
+}
 
-    navigationLinks.forEach(link => {
-        link.classList.toggle(
-            "active",
-            link.dataset.page === pageName
-        );
-    });
+/* GÉNÉRATION DE LA RÉPONSE */
 
-    const title = document.getElementById("page-title");
+async function generateResponse() {
+    if (isGenerating) return;
 
-    if (title) {
-        title.textContent = pageTitles[pageName] || "MémoCampus";
+    const prompt = promptInput.value.trim();
+
+    if (!prompt) {
+        resultArea.textContent = "Écris une question pour commencer.";
+        promptInput.focus();
+        return;
     }
 
-    closeMobileMenu();
-}
+    isGenerating = true;
 
-/* =========================================
-   MENU MOBILE
-========================================= */
+    generateButton.disabled = true;
+    generateButton.textContent = "Réflexion en cours...";
 
-function initMobileMenu() {
-    const menuButton = document.getElementById("menu-button");
-    const sidebar = document.querySelector(".sidebar");
+    resultArea.textContent =
+        "MémoCampus IA prépare une réponse...";
 
-    if (!menuButton || !sidebar) return;
-
-    menuButton.setAttribute("aria-expanded", "false");
-
-    menuButton.addEventListener("click", () => {
-        const isOpen = sidebar.classList.toggle("open");
-
-        menuButton.setAttribute(
-            "aria-expanded",
-            String(isOpen)
-        );
-    });
-}
-
-function closeMobileMenu() {
-    const sidebar = document.querySelector(".sidebar");
-    const menuButton = document.getElementById("menu-button");
-
-    sidebar?.classList.remove("open");
-    menuButton?.setAttribute("aria-expanded", "false");
-}
-
-/* =========================================
-   INITIALISATION DE LA NAVIGATION
-========================================= */
-
-function initNavigation() {
-    document.querySelectorAll("[data-page]").forEach(link => {
-        link.addEventListener("click", () => {
-            showPage(link.dataset.page);
+    try {
+        const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt })
         });
-    });
 
-    document.querySelectorAll("[data-go]").forEach(button => {
-        button.addEventListener("click", () => {
-            showPage(button.dataset.go);
-        });
-    });
+        const contentType =
+            response.headers.get("content-type") || "";
 
-    showPage("dashboard");
-    initMobileMenu();
-}
-
-/* =========================================
-   EXPORTATION DES DONNÉES
-========================================= */
-
-function initBackup() {
-    const exportButton = document.getElementById("export-data");
-    const importButton = document.getElementById("import-data");
-    const backupInput = document.getElementById("backup-input");
-
-    exportButton?.addEventListener("click", () => {
-        try {
-            const backup = exportData();
-
-            const blob = new Blob(
-                [JSON.stringify(backup, null, 2)],
-                { type: "application/json" }
+        if (!contentType.includes("application/json")) {
+            throw new Error(
+                "Le serveur n'a pas renvoyé une réponse JSON."
             );
-
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-
-            link.href = url;
-            link.download = "memocampus-sauvegarde.json";
-
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-        } catch (error) {
-            console.error("Erreur d'exportation :", error);
-            alert("Impossible d'exporter les données.");
         }
-    });
 
-    /* =====================================
-       IMPORTATION DES DONNÉES
-    ===================================== */
+        const data = await response.json();
 
-    importButton?.addEventListener("click", () => {
-        backupInput?.click();
-    });
-
-    backupInput?.addEventListener("change", async () => {
-        const file = backupInput.files?.[0];
-
-        if (!file) return;
-
-        try {
-            const content = await file.text();
-            const data = JSON.parse(content);
-
-            if (!confirm(
-                "Remplacer les données actuelles par cette sauvegarde ?"
-            )) {
-                return;
-            }
-
-            const success = importData(data);
-
-            if (!success) {
-                alert("L'importation a échoué.");
-                return;
-            }
-
-            alert("Sauvegarde importée avec succès.");
-
-            window.location.reload();
-
-        } catch (error) {
-            console.error("Erreur d'importation :", error);
-
-            alert(
-                "Impossible de lire cette sauvegarde. Vérifie le fichier sélectionné."
+        if (!response.ok) {
+            throw new Error(
+                data.details ||
+                data.error ||
+                "Le serveur a rencontré une erreur."
             );
-
-        } finally {
-            backupInput.value = "";
         }
-    });
-}
 
-/* =========================================
-   INITIALISATION GÉNÉRALE
-========================================= */
+        if (!data.answer) {
+            throw new Error("Aucune réponse reçue du serveur.");
+        }
 
-function initApp() {
-    initNavigation();
+        resultArea.textContent = data.answer;
 
-    initCourses();
-    initFiles();
-    initWebsites();
-    initNotes();
-    initQuiz();
-    initMindmap();
-    initProgress();
-    initAI();
+    } catch (error) {
+        console.error("Erreur MémoCampus IA :", error);
 
-    initBackup();
+        resultArea.textContent =
+            "Erreur technique : " + error.message;
 
-    console.log("MémoCampus : application initialisée.");
-}
+    } finally {
+        isGenerating = false;
 
-/* =========================================
-   DÉMARRAGE
-========================================= */
-
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initApp);
-} else {
-    initApp();
+        generateButton.disabled = false;
+        generateButton.textContent = "Générer une réponse";
+    }
 }
