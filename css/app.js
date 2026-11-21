@@ -124,7 +124,7 @@ function initNavigation() {
 }
 
 /* =========================================
-   EXPORTATION DES DONNÉES
+   EXPORTATION ET IMPORTATION
 ========================================= */
 
 function initBackup() {
@@ -159,10 +159,6 @@ function initBackup() {
         }
     });
 
-    /* =====================================
-       IMPORTATION DES DONNÉES
-    ===================================== */
-
     importButton?.addEventListener("click", () => {
         backupInput?.click();
     });
@@ -190,7 +186,6 @@ function initBackup() {
             }
 
             alert("Sauvegarde importée avec succès.");
-
             window.location.reload();
 
         } catch (error) {
@@ -220,7 +215,18 @@ function initApp() {
     initQuiz();
     initMindmap();
     initProgress();
-    initAI();
+
+    // Chargement indépendant de l'intelligence artificielle
+    import("./ai.js")
+        .then(module => {
+            module.initAI();
+        })
+        .catch(error => {
+            console.error(
+                "MémoCampus IA indisponible :",
+                error
+            );
+        });
 
     initBackup();
 
