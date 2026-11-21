@@ -78,19 +78,15 @@ async function generateResponse() {
             );
         }
 
-        resultArea.textContent =
-            data.answer || "Aucune réponse reçue.";
+        } catch (error) {
+    console.error("Erreur MémoCampus IA :", error);
 
-    } catch (error) {
-        console.error("Erreur MémoCampus IA :", error);
+    resultArea.textContent =
+        "Erreur technique : " + error.message;
 
-        resultArea.textContent =
-            "Impossible de contacter MémoCampus IA pour le moment. Vérifie que le serveur et sa configuration sont opérationnels.";
+} finally {
+    isGenerating = false;
 
-    } finally {
-        isGenerating = false;
-
-        generateButton.disabled = false;
-        generateButton.textContent = "Générer une réponse";
-    }
+    generateButton.disabled = false;
+    generateButton.textContent = "Générer une réponse";
 }
