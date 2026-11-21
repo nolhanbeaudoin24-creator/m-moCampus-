@@ -1,96 +1,121 @@
 
 /* =========================================
-   MÉMOCAMPUS — AI
-   Assistant intelligent
+   MÉMOCAMPUS — SERVEUR IA
+   Cloudflare Pages Function
 ========================================= */
 
-const promptInput = document.getElementById("ai-prompt");
-const generateButton = document.getElementById("ai-generate");
-const resultArea = document.getElementById("ai-result");
-
-let isGenerating = false;
-
-/* =========================================
-   INITIALISATION
-========================================= */
-
-export function initAI() {
-    if (!generateButton || !promptInput || !resultArea) {
-        console.warn("MémoCampus IA : éléments HTML introuvables.");
-        return;
-    }
-
-    generateButton.addEventListener("click", generateResponse);
-
-    promptInput.addEventListener("keydown", event => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            generateResponse();
-        }
-    });
-}
-
-/* =========================================
-   GÉNÉRATION DE LA RÉPONSE
-========================================= */
-
-async function generateResponse() {
-    if (isGenerating) return;
-
-    const prompt = promptInput.value.trim();
-
-    if (!prompt) {
-        resultArea.textContent = "Écris une question pour commencer.";
-        promptInput.focus();
-        return;
-    }
-
-    isGenerating = true;
-
-    generateButton.disabled = true;
-    generateButton.textContent = "Réflexion en cours...";
-
-    resultArea.textContent =
-        "MémoCampus IA prépare une réponse...";
-
+export async function onRequestPost({ request, env }) {
     try {
-        const response = await fetch("/api/generate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ prompt })
+        // Vérifier la liaison Workers AI
+        if (!env.AI) {
+            return Response.json(
+                { error: "Le service IA n'est pas configuré." },
+                { status: 503 }
+            );
+        }
+
+        // Récupérer la question
+        const body = await request.json();
+
+        const prompt =
+            typeof body.prompt === "string"
+                ? body.prompt.trim()
+                : "";
+
+        if (!prompt) {
+            return Response.json(
+                { error: "Aucune question reçue." },
+                { status: 400 }
+            );
+        }
+
+        if (prompt.length > 4000) {
+            return Response.json(
+                { error: "La question est trop longue." },
+                { status: 400 }
+            );
+        }
+
+        // Interroger Gemma 4
+        const result = await env.AI.run(
+            "@cf/google/gemma-4-26b-a4b-it",
+            {
+                messages: [
+                    {
+                        role: "system",
+                        content:
+                            "Tu es MémoCampus IA, un assistant pédagogique. " +
+                            "Tu aides les élèves à comprendre leurs cours. " +
+                            "Réponds toujours en français, clairement et " +
+                            "avec des explications simples et pédagogiques. " +
+                            "Rédige des réponses complètes. " +
+                            "Ne t'arrête jamais au milieu d'une phrase. " +
+                            "Adapte la longueur de ta réponse à la question."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_completion_tokens: 1500
+            }
+        );
+
+        // Récupérer le texte généré
+        const choice = result?.choices?.[0];
+        const content = choice?.message?.content;
+
+        let answer = "";
+
+        if (typeof content === "string") {
+            answer = content.trim();
+        } else if (Array.isArray(content)) {
+            answer = content
+                .map(part =>
+                    typeof part === "string"
+                        ? part
+                        : part?.text || ""
+                )
+                .join("")
+                .trim();
+        } else if (typeof result?.response === "string") {
+            answer = result.response.trim();
+        }
+
+        if (!answer) {
+            const fields =
+                result && typeof result === "object"
+                    ? Object.keys(result).join(", ")
+                    : typeof result;
+
+            throw new Error(
+                "Aucun texte exploitable reçu. Champs : " +
+                (fields || "aucun")
+            );
+        }
+
+        // Vérifier la fin de génération
+        const finishReason = choice?.finish_reason || "inconnue";
+
+        console.log(
+            "MémoCampus IA — Fin de génération :",
+            finishReason
+        );
+
+        return Response.json({
+            answer,
+            finishReason
         });
-
-        const contentType = response.headers.get("content-type") || "";
-
-        if (!contentType.includes("application/json")) {
-            throw new Error(
-                "Le serveur n'a pas renvoyé une réponse JSON."
-            );
-        }
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                data.error || "Le serveur a rencontré une erreur."
-            );
-        }
-
-        resultArea.textContent =
-            data.answer || "Aucune réponse reçue.";
 
     } catch (error) {
         console.error("Erreur MémoCampus IA :", error);
 
-        resultArea.textContent =
-            "Impossible de contacter MémoCampus IA pour le moment. Vérifie que le serveur et sa configuration sont opérationnels.";
-
-    } finally {
-        isGenerating = false;
-
-        generateButton.disabled = false;
-        generateButton.textContent = "Générer une réponse";
+        return Response.json(
+            {
+                error: "Le serveur IA a rencontré une erreur.",
+                details: error?.message || String(error)
+            },
+            { status: 500 }
+        );
     }
 }
