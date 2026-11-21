@@ -1,121 +1,245 @@
+    nolhanbeaudoin24-creator
+    m-moCampus-
+
+Repository navigation
+
+    Code
+    Issues
+    Pull requests
+    Agents
+    Actions
+    Projects
+    Wiki
+    Security and quality
+    Insights
+    Settings
+
+Files
+tT
+
+    css
+        ai.js
+        app.js
+        courses.js
+        files.js
+        mindmap.js
+        notes.js
+        progress.js
+        quiz.js
+        storage.js
+        style.css
+        websites.js
+    functions
+    ai.js
+    app.js
+    courses.js
+    files.js
+    index.html
+    mindmap.js
+    notes.js
+    progress.js
+    quiz.js
+    storage.js
+    style.css
+    websites.js
+
+    m-moCampus-/css
+
+/
+in
+main
+
+    Edit
+    Preview
+
+Indent mode
+Indent size
+Line wrap mode
+Editing ai.js file contents
+ 
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
 
 /* =========================================
-   MÉMOCAMPUS — SERVEUR IA
-   Cloudflare Pages Function
+   MÉMOCAMPUS — AI
+   Assistant intelligent
 ========================================= */
 
-export async function onRequestPost({ request, env }) {
+const promptInput = document.getElementById("ai-prompt");
+const generateButton = document.getElementById("ai-generate");
+const resultArea = document.getElementById("ai-result");
+
+let isGenerating = false;
+
+/* INITIALISATION */
+
+export function initAI() {
+    if (!generateButton || !promptInput || !resultArea) {
+        console.warn("MémoCampus IA : éléments HTML introuvables.");
+        return;
+    }
+
+    generateButton.addEventListener("click", generateResponse);
+
+    promptInput.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            generateResponse();
+        }
+    });
+}
+
+/* GÉNÉRATION */
+
+async function generateResponse() {
+    if (isGenerating) return;
+
+    const prompt = promptInput.value.trim();
+
+    if (!prompt) {
+        resultArea.textContent = "Écris une question pour commencer.";
+        promptInput.focus();
+        return;
+    }
+
+    isGenerating = true;
+    generateButton.disabled = true;
+    generateButton.textContent = "Réflexion en cours...";
+    resultArea.textContent = "MémoCampus IA prépare une réponse...";
+
     try {
-        // Vérifier la liaison Workers AI
-        if (!env.AI) {
-            return Response.json(
-                { error: "Le service IA n'est pas configuré." },
-                { status: 503 }
-            );
-        }
-
-        // Récupérer la question
-        const body = await request.json();
-
-        const prompt =
-            typeof body.prompt === "string"
-                ? body.prompt.trim()
-                : "";
-
-        if (!prompt) {
-            return Response.json(
-                { error: "Aucune question reçue." },
-                { status: 400 }
-            );
-        }
-
-        if (prompt.length > 4000) {
-            return Response.json(
-                { error: "La question est trop longue." },
-                { status: 400 }
-            );
-        }
-
-        // Interroger Gemma 4
-        const result = await env.AI.run(
-            "@cf/google/gemma-4-26b-a4b-it",
-            {
-                messages: [
-                    {
-                        role: "system",
-                        content:
-                            "Tu es MémoCampus IA, un assistant pédagogique. " +
-                            "Tu aides les élèves à comprendre leurs cours. " +
-                            "Réponds toujours en français, clairement et " +
-                            "avec des explications simples et pédagogiques. " +
-                            "Rédige des réponses complètes. " +
-                            "Ne t'arrête jamais au milieu d'une phrase. " +
-                            "Adapte la longueur de ta réponse à la question."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
-                max_completion_tokens: 1500
-            }
-        );
-
-        // Récupérer le texte généré
-        const choice = result?.choices?.[0];
-        const content = choice?.message?.content;
-
-        let answer = "";
-
-        if (typeof content === "string") {
-            answer = content.trim();
-        } else if (Array.isArray(content)) {
-            answer = content
-                .map(part =>
-                    typeof part === "string"
-                        ? part
-                        : part?.text || ""
-                )
-                .join("")
-                .trim();
-        } else if (typeof result?.response === "string") {
-            answer = result.response.trim();
-        }
-
-        if (!answer) {
-            const fields =
-                result && typeof result === "object"
-                    ? Object.keys(result).join(", ")
-                    : typeof result;
-
-            throw new Error(
-                "Aucun texte exploitable reçu. Champs : " +
-                (fields || "aucun")
-            );
-        }
-
-        // Vérifier la fin de génération
-        const finishReason = choice?.finish_reason || "inconnue";
-
-        console.log(
-            "MémoCampus IA — Fin de génération :",
-            finishReason
-        );
-
-        return Response.json({
-            answer,
-            finishReason
+        const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt })
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.details ||
+                data.error ||
+                "Erreur HTTP " + response.status
+            );
+        }
+
+        if (!data.answer) {
+            throw new Error("Le serveur n'a renvoyé aucun texte.");
+        }
+
+        resultArea.textContent = data.answer;
 
     } catch (error) {
         console.error("Erreur MémoCampus IA :", error);
 
-        return Response.json(
-            {
-                error: "Le serveur IA a rencontré une erreur.",
-                details: error?.message || String(error)
-            },
-            { status: 500 }
-        );
+        resultArea.textContent =
+            "Diagnostic MémoCampus IA : " +
+            (error.message || "Erreur inconnue.");
+
+    } finally {
+        isGenerating = false;
+        generateButton.disabled = false;
+        generateButton.textContent = "Générer une réponse";
     }
 }
+
+Use Control + Shift + m to toggle the tab key moving focus. Alternatively, use esc then tab to move to the next interactive element on the page.
+Commit changes
+There was an error committing your changes: nolhanbeaudoin24-creator has committed since you started editing. See what changed
+Commit message
+Extended description
+Direct commit or PR
+Commit directly to the
+
+main
+
+branch
+Create a new branch for this commit and start a pull request Learn more about pull requests
