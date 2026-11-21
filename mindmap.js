@@ -12,83 +12,69 @@ import {
 
 const mindmapList = document.getElementById("mindmap-list");
 
+/* =========================================
+   MISE À JOUR DES STATISTIQUES
+========================================= */
+
 function updateStatistics() {
     document.dispatchEvent(
         new CustomEvent("memocampus:update")
     );
 }
 
+/* =========================================
+   INITIALISATION
+========================================= */
+
 export function initMindmap() {
-    if (!mindmapList) return;
+    if (!mindmapList) {
+        console.warn("MémoCampus : liste des cartes mentales introuvable.");
+        return;
+    }
+
+    const form = document.getElementById("mindmap-form");
+
+    if (form && !form.dataset.initialized) {
+        form.dataset.initialized = "true";
+
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+
+            const title = document
+                .getElementById("mindmap-title")
+                .value.trim();
+
+            const content = document
+                .getElementById("mindmap-content")
+                .value.trim();
+
+            if (!title || !content) {
+                alert("Complète le titre et le contenu de ta carte.");
+                return;
+            }
+
+            const success = createMindmap({
+                title,
+                content
+            });
+
+            if (!success) {
+                alert("Impossible d'enregistrer cette carte mentale.");
+                return;
+            }
+
+            form.reset();
+
+            alert("Ta carte mentale a été enregistrée !");
+        });
+    }
 
     renderMindmaps();
-    createMindmapForm();
 }
 
-function createMindmapForm() {
-    if (document.getElementById("mindmap-form")) return;
-
-    const container = document.createElement("section");
-    container.className = "mindmap-create";
-
-    container.innerHTML = `
-        <h2>Créer une carte mentale</h2>
-
-        <form id="mindmap-form">
-            <label for="mindmap-title">
-                Titre de la carte
-            </label>
-
-            <input
-                type="text"
-                id="mindmap-title"
-                placeholder="Exemple : Les transports"
-                required
-            >
-
-            <label for="mindmap-content">
-                Contenu de la carte
-            </label>
-
-            <textarea
-                id="mindmap-content"
-                rows="6"
-                placeholder="Écris les idées principales et les informations à retenir..."
-                required
-            ></textarea>
-
-            <button type="submit">
-                Enregistrer la carte mentale
-            </button>
-        </form>
-    `;
-
-    mindmapList.parentNode.insertBefore(container, mindmapList);
-
-    const form = container.querySelector("#mindmap-form");
-
-    form.addEventListener("submit", event => {
-        event.preventDefault();
-
-        const title = document
-            .getElementById("mindmap-title")
-            .value.trim();
-
-        const content = document
-            .getElementById("mindmap-content")
-            .value.trim();
-
-        const success = createMindmap({ title, content });
-
-        if (!success) {
-            alert("Impossible d'enregistrer cette carte mentale.");
-            return;
-        }
-
-        form.reset();
-        alert("Carte mentale enregistrée !");
-    });
-}
+/* =========================================
+   CRÉATION D'UNE CARTE
+========================================= */
 
 export function createMindmap(data) {
     const title = String(data?.title || "").trim();
@@ -104,13 +90,19 @@ export function createMindmap(data) {
         createdAt: new Date().toISOString()
     });
 
-    if (!result) return false;
+    if (!result) {
+        return false;
+    }
 
     renderMindmaps();
     updateStatistics();
 
     return true;
 }
+
+/* =========================================
+   AFFICHAGE DES CARTES
+========================================= */
 
 function renderMindmaps() {
     if (!mindmapList) return;
@@ -139,6 +131,7 @@ function renderMindmaps() {
         content.textContent = mindmap.content || "";
 
         const date = document.createElement("small");
+
         const createdAt = new Date(mindmap.createdAt);
 
         date.textContent = Number.isNaN(createdAt.getTime())
@@ -146,6 +139,7 @@ function renderMindmaps() {
             : createdAt.toLocaleDateString("fr-FR");
 
         const deleteButton = document.createElement("button");
+
         deleteButton.type = "button";
         deleteButton.textContent = "Supprimer";
         deleteButton.className = "delete-button";
@@ -161,10 +155,20 @@ function renderMindmaps() {
             updateStatistics();
         });
 
-        card.append(title, content, date, deleteButton);
+        card.append(
+            title,
+            content,
+            date,
+            deleteButton
+        );
+
         mindmapList.appendChild(card);
     });
 }
+
+/* =========================================
+   EXPORT
+========================================= */
 
 export {
     renderMindmaps
