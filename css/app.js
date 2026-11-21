@@ -11,7 +11,6 @@ import { initNotes } from "./notes.js";
 import { initQuiz } from "./quiz.js";
 import { initMindmap } from "./mindmap.js";
 import { initProgress } from "./progress.js";
-import { initAI } from "./ai.js";
 
 import {
     exportData,
