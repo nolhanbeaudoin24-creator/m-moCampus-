@@ -216,10 +216,18 @@ function initApp() {
     initMindmap();
     initProgress();
 
-    // Chargement indépendant de l'intelligence artificielle
+    // Initialisation indépendante de l'IA
     import("./ai.js")
-        .then(module => {
-            module.initAI();
+        .then(({ initAI }) => {
+            if (typeof initAI !== "function") {
+                throw new Error(
+                    "La fonction initAI est introuvable dans ai.js."
+                );
+            }
+
+            initAI();
+
+            console.log("MémoCampus IA : initialisée.");
         })
         .catch(error => {
             console.error(
