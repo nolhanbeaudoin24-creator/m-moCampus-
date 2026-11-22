@@ -474,30 +474,83 @@
             <p>Ton assistant pédagogique MémoCampus.</p>
           </div>
 
-          <div class="ai-panel">
+          <div class="ai-chat-layout">
 
-            <h2>Assistant IA</h2>
+            <!-- HISTORIQUE DES CONVERSATIONS -->
 
-            <p>
-              Prépare des fiches de révision,
-              des résumés et des quiz à partir de tes cours.
-            </p>
+            <aside class="ai-history">
 
-            <textarea
-              id="ai-prompt"
-              rows="6"
-              placeholder="Que souhaites-tu travailler ?"
-              aria-label="Question pour MémoCampus IA"
-            ></textarea>
+              <button id="ai-new-chat" type="button">
+                + Nouvelle conversation
+              </button>
 
-            <button id="ai-generate">
-              Générer avec l'IA
-            </button>
+              <h3>Historique des conversations</h3>
 
-            <div
-              id="ai-result"
-              aria-live="polite"
-            ></div>
+              <div id="ai-conversations-list">
+                <p class="ai-empty-history">
+                  Tes conversations apparaîtront ici.
+                </p>
+              </div>
+
+            </aside>
+
+            <!-- ZONE DE DISCUSSION -->
+
+            <div class="ai-panel ai-chat-panel">
+
+              <div class="ai-chat-header">
+                <div>
+                  <h2>MémoCampus IA</h2>
+                  <p>Assistant pédagogique personnel</p>
+                </div>
+
+                <span class="ai-status">En ligne</span>
+              </div>
+
+              <div
+                id="ai-messages"
+                class="ai-messages"
+                aria-live="polite"
+              >
+
+                <div class="ai-welcome-message">
+                  <h3>Bonjour !</h3>
+
+                  <p>
+                    Je suis MémoCampus IA.
+                    Pose-moi une question, demande-moi
+                    une explication ou prépare tes révisions.
+                  </p>
+                </div>
+
+              </div>
+
+              <!-- ZONE DE SAISIE -->
+
+              <div class="ai-composer">
+
+                <textarea
+                  id="ai-prompt"
+                  rows="3"
+                  placeholder="Écris ton message à MémoCampus IA..."
+                  aria-label="Message pour MémoCampus IA"
+                ></textarea>
+
+                <div class="ai-composer-footer">
+
+                  <span>
+                    Entrée pour envoyer · Maj + Entrée pour revenir à la ligne
+                  </span>
+
+                  <button id="ai-generate" type="button">
+                    Envoyer
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
 
           </div>
 
