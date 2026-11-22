@@ -14,6 +14,7 @@ const defaultData = {
     quizzes: [],
     mindmaps: [],
     history: [],
+    conversations: [],
     settings: {
         version: 1
     }
@@ -217,6 +218,26 @@ function addHistory(action, details = "") {
 }
 
 /* =========================================
+   CONVERSATIONS DE MÉMOCAMPUS IA
+========================================= */
+
+function getConversations() {
+    return getCollection("conversations");
+}
+
+function addConversation(conversation) {
+    return addItem("conversations", conversation);
+}
+
+function updateConversation(id, changes) {
+    return updateItem("conversations", id, changes);
+}
+
+function deleteConversation(id) {
+    return deleteItem("conversations", id);
+}
+
+/* =========================================
    EXPORTATION
 ========================================= */
 
@@ -292,6 +313,10 @@ export {
     deleteItem,
     updateItem,
     addHistory,
+    getConversations,
+    addConversation,
+    updateConversation,
+    deleteConversation,
     saveData,
     exportData,
     importData
