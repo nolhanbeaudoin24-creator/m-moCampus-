@@ -37,9 +37,7 @@ export function initAI() {
         !conversationsList ||
         !newChatButton
     ) {
-        console.error(
-            "MémoCampus IA : éléments HTML introuvables."
-        );
+        console.error("MémoCampus IA : éléments HTML introuvables.");
         return;
     }
 
@@ -88,8 +86,10 @@ export function initAI() {
 function startNewConversation() {
     currentConversationId = null;
     promptInput.value = "";
+
     showWelcomeMessage();
     renderConversationHistory();
+
     promptInput.focus();
 }
 
@@ -109,9 +109,7 @@ function createConversation(firstMessage) {
     const saved = addConversation(conversation);
 
     if (!saved) {
-        throw new Error(
-            "Impossible d'enregistrer la conversation."
-        );
+        throw new Error("Impossible d'enregistrer la conversation.");
     }
 
     currentConversationId = saved.id;
@@ -120,7 +118,7 @@ function createConversation(firstMessage) {
 }
 
 /* =========================================
-   AFFICHAGE DU MESSAGE DE BIENVENUE
+   MESSAGE D'ACCUEIL
 ========================================= */
 
 function showWelcomeMessage() {
@@ -133,6 +131,7 @@ function showWelcomeMessage() {
     title.textContent = "Bonjour !";
 
     const description = document.createElement("p");
+
     description.textContent =
         "Je suis MémoCampus IA. Pose-moi une question, demande-moi une explication ou prépare tes révisions.";
 
@@ -183,9 +182,9 @@ function renderConversationHistory() {
 
     if (conversations.length === 0) {
         const empty = document.createElement("p");
+
         empty.className = "ai-empty-history";
-        empty.textContent =
-            "Tes conversations apparaîtront ici.";
+        empty.textContent = "Tes conversations apparaîtront ici.";
 
         conversationsList.appendChild(empty);
         return;
@@ -197,7 +196,9 @@ function renderConversationHistory() {
         button.type = "button";
         button.className = "ai-history-item";
         button.dataset.conversationId = conversation.id;
-        button.textContent = conversation.title || "Nouvelle conversation";
+
+        button.textContent =
+            conversation.title || "Nouvelle conversation";
 
         if (conversation.id === currentConversationId) {
             button.classList.add("active");
@@ -208,7 +209,7 @@ function renderConversationHistory() {
 }
 
 /* =========================================
-   OUVERTURE D'UNE CONVERSATION
+   OUVRIR UNE CONVERSATION
 ========================================= */
 
 function openConversation(id) {
@@ -239,7 +240,7 @@ function showThinkingIndicator() {
 }
 
 /* =========================================
-   ENVOI D'UN MESSAGE
+   ENVOI ET GÉNÉRATION DE RÉPONSE
 ========================================= */
 
 async function generateResponse() {
@@ -277,14 +278,14 @@ async function generateResponse() {
 
         conversation.updatedAt = new Date().toISOString();
 
-        if (!updateConversation(conversation.id, {
+        const saved = updateConversation(conversation.id, {
             messages: conversation.messages,
             title: conversation.title,
             updatedAt: conversation.updatedAt
-        })) {
-            throw new Error(
-                "Impossible de sauvegarder ton message."
-            );
+        });
+
+        if (!saved) {
+            throw new Error("Impossible de sauvegarder ton message.");
         }
 
         promptInput.value = "";
@@ -343,9 +344,10 @@ async function generateResponse() {
         console.error("Erreur MémoCampus IA :", error);
 
         const errorMessage = document.createElement("div");
+
         errorMessage.className = "ai-error-message";
         errorMessage.textContent =
-            "Erreur : " + error.message;
+            "Erreur : " + (error.message || "Erreur inconnue.");
 
         messagesArea.appendChild(errorMessage);
 
@@ -355,6 +357,7 @@ async function generateResponse() {
         generateButton.disabled = false;
         generateButton.textContent = "Envoyer";
         promptInput.disabled = false;
+
         promptInput.focus();
     }
 }
