@@ -14,6 +14,7 @@ const defaultData = {
     quizzes: [],
     mindmaps: [],
     history: [],
+    conversations: [],
     settings: {
         version: 1
     }
@@ -196,7 +197,7 @@ function updateItem(collection, id, changes) {
 }
 
 /* =========================================
-   HISTORIQUE
+   HISTORIQUE DES ACTIONS
 ========================================= */
 
 function addHistory(action, details = "") {
@@ -214,6 +215,29 @@ function addHistory(action, details = "") {
     }
 
     return true;
+}
+
+/* =========================================
+   HISTORIQUE DES CONVERSATIONS IA
+========================================= */
+
+// Les conversations sont stockées séparément
+// de l'historique classique des actions.
+
+function getConversations() {
+    return getCollection("conversations");
+}
+
+function addConversation(conversation) {
+    return addItem("conversations", conversation);
+}
+
+function updateConversation(id, changes) {
+    return updateItem("conversations", id, changes);
+}
+
+function deleteConversation(id) {
+    return deleteItem("conversations", id);
 }
 
 /* =========================================
@@ -292,6 +316,10 @@ export {
     deleteItem,
     updateItem,
     addHistory,
+    getConversations,
+    addConversation,
+    updateConversation,
+    deleteConversation,
     saveData,
     exportData,
     importData
