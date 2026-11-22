@@ -84,6 +84,8 @@ export function initAI() {
 ========================================= */
 
 function startNewConversation() {
+    if (isGenerating) return;
+
     currentConversationId = null;
     promptInput.value = "";
 
@@ -131,7 +133,6 @@ function showWelcomeMessage() {
     title.textContent = "Bonjour !";
 
     const description = document.createElement("p");
-
     description.textContent =
         "Je suis MémoCampus IA. Pose-moi une question, demande-moi une explication ou prépare tes révisions.";
 
@@ -213,6 +214,8 @@ function renderConversationHistory() {
 ========================================= */
 
 function openConversation(id) {
+    if (isGenerating) return;
+
     const conversation = getConversations().find(
         item => item.id === id
     );
@@ -294,13 +297,19 @@ async function generateResponse() {
         showThinkingIndicator();
         renderConversationHistory();
 
+        /* APPEL DU SERVEUR CLOUDFLARE */
+
         const response = await fetch("/api/generate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({
+                messages: conversation.messages.slice(-20)
+            })
         });
+
+        /* VÉRIFICATION DE LA RÉPONSE */
 
         const contentType =
             response.headers.get("content-type") || "";
@@ -325,6 +334,8 @@ async function generateResponse() {
             throw new Error("Aucune réponse reçue du serveur.");
         }
 
+        /* ENREGISTREMENT DE LA RÉPONSE */
+
         conversation.messages.push({
             role: "assistant",
             content: data.answer
@@ -332,10 +343,14 @@ async function generateResponse() {
 
         conversation.updatedAt = new Date().toISOString();
 
-        updateConversation(conversation.id, {
+        const updated = updateConversation(conversation.id, {
             messages: conversation.messages,
             updatedAt: conversation.updatedAt
         });
+
+        if (!updated) {
+            throw new Error("Impossible d'enregistrer la réponse.");
+        }
 
         renderMessages(conversation);
         renderConversationHistory();
@@ -350,6 +365,7 @@ async function generateResponse() {
             "Erreur : " + (error.message || "Erreur inconnue.");
 
         messagesArea.appendChild(errorMessage);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
 
     } finally {
         isGenerating = false;
